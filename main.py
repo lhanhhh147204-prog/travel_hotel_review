@@ -5,11 +5,11 @@ import asyncio
 import logging
 import sys
 
-from config          import CFG
-from core.pipeline   import TwoStagePipeline
-from analytics.analyzer  import DataAnalyzer
+from config import CFG
+from core.pipeline import TwoStagePipeline
+from analytics.analyzer import DataAnalyzer
 from analytics.estimator import TimeEstimator
-from db              import close_pool
+from db import close_pool
 
 log = logging.getLogger(__name__)
 
@@ -17,14 +17,14 @@ log = logging.getLogger(__name__)
 PROVINCE_TIERS: dict[str, dict] = {
     "tier_1": {
         "provinces": [
-            "Hà Nội",         "Hồ Chí Minh",
-            "Đà Nẵng",        "Khánh Hòa",
-            "Kiên Giang",     "Lâm Đồng",
-            "Quảng Nam",      "Thừa Thiên Huế",
-            "Quảng Ninh",     "Lào Cai",
+            "Hà Nội", "Hồ Chí Minh",
+            "Đà Nẵng", "Khánh Hòa",
+            "Kiên Giang", "Lâm Đồng",
+            "Quảng Nam", "Thừa Thiên Huế",
+            "Quảng Ninh", "Lào Cai",
         ],
         "target_reviews": 50_000,
-        "target_hotels":  500,
+        "target_hotels": 500,
         "sources": [
             "booking", "agoda", "tripadvisor",
             "airbnb", "ivivu", "google_maps",
@@ -33,16 +33,16 @@ PROVINCE_TIERS: dict[str, dict] = {
     },
     "tier_2": {
         "provinces": [
-            "Bình Thuận",     "Bà Rịa-Vũng Tàu",
-            "Ninh Bình",      "Hải Phòng",
-            "Bình Định",      "Phú Yên",
-            "Đắk Lắk",       "Hà Giang",
-            "Điện Biên",      "Sơn La",
-            "Hòa Bình",       "Thanh Hóa",
-            "Nghệ An",        "Quảng Bình",
+            "Bình Thuận", "Bà Rịa-Vũng Tàu",
+            "Ninh Bình", "Hải Phòng",
+            "Bình Định", "Phú Yên",
+            "Đắk Lắk", "Hà Giang",
+            "Điện Biên", "Sơn La",
+            "Hòa Bình", "Thanh Hóa",
+            "Nghệ An", "Quảng Bình",
         ],
         "target_reviews": 20_000,
-        "target_hotels":  200,
+        "target_hotels": 200,
         "sources": [
             "booking", "agoda", "ivivu",
             "mytour", "google_maps", "traveloka",
@@ -50,29 +50,29 @@ PROVINCE_TIERS: dict[str, dict] = {
     },
     "tier_3": {
         "provinces": [
-            "An Giang",       "Bạc Liêu",
-            "Bắc Giang",      "Bắc Kạn",
-            "Bắc Ninh",       "Bến Tre",
-            "Bình Dương",     "Bình Phước",
-            "Cà Mau",         "Cần Thơ",
-            "Cao Bằng",       "Đắk Nông",
-            "Đồng Nai",       "Đồng Tháp",
-            "Gia Lai",        "Hà Nam",
-            "Hà Tĩnh",        "Hải Dương",
-            "Hậu Giang",      "Hưng Yên",
-            "Kon Tum",        "Lai Châu",
-            "Lạng Sơn",       "Long An",
-            "Nam Định",       "Ninh Thuận",
-            "Phú Thọ",        "Quảng Ngãi",
-            "Quảng Trị",      "Sóc Trăng",
-            "Tây Ninh",       "Thái Bình",
-            "Thái Nguyên",    "Tiền Giang",
-            "Trà Vinh",       "Tuyên Quang",
-            "Vĩnh Long",      "Vĩnh Phúc",
+            "An Giang", "Bạc Liêu",
+            "Bắc Giang", "Bắc Kạn",
+            "Bắc Ninh", "Bến Tre",
+            "Bình Dương", "Bình Phước",
+            "Cà Mau", "Cần Thơ",
+            "Cao Bằng", "Đắk Nông",
+            "Đồng Nai", "Đồng Tháp",
+            "Gia Lai", "Hà Nam",
+            "Hà Tĩnh", "Hải Dương",
+            "Hậu Giang", "Hưng Yên",
+            "Kon Tum", "Lai Châu",
+            "Lạng Sơn", "Long An",
+            "Nam Định", "Ninh Thuận",
+            "Phú Thọ", "Quảng Ngãi",
+            "Quảng Trị", "Sóc Trăng",
+            "Tây Ninh", "Thái Bình",
+            "Thái Nguyên", "Tiền Giang",
+            "Trà Vinh", "Tuyên Quang",
+            "Vĩnh Long", "Vĩnh Phúc",
             "Yên Bái",
         ],
         "target_reviews": 5_000,
-        "target_hotels":  50,
+        "target_hotels": 50,
         "sources": [
             "booking", "ivivu",
             "google_maps", "mytour",
@@ -100,25 +100,25 @@ def get_all_sources() -> list[str]:
 def calculate_targets() -> dict:
     """Tính tổng mục tiêu scrape."""
     total_reviews = 0
-    total_hotels  = 0
-    breakdown     = {}
+    total_hotels = 0
+    breakdown = {}
 
     for tier, cfg in PROVINCE_TIERS.items():
-        n       = len(cfg["provinces"])
+        n = len(cfg["provinces"])
         reviews = n * cfg["target_reviews"]
-        hotels  = n * cfg["target_hotels"]
+        hotels = n * cfg["target_hotels"]
         total_reviews += reviews
-        total_hotels  += hotels
+        total_hotels += hotels
         breakdown[tier] = {
             "provinces": n,
-            "reviews":   reviews,
-            "hotels":    hotels,
+            "reviews": reviews,
+            "hotels": hotels,
         }
 
     return {
         "total_reviews": total_reviews,
-        "total_hotels":  total_hotels,
-        "breakdown":     breakdown,
+        "total_hotels": total_hotels,
+        "breakdown": breakdown,
     }
 
 
@@ -149,17 +149,17 @@ def print_banner() -> None:
 # ── Mode handlers ─────────────────────────────────────────────
 
 async def run_scrape(
-        tier:       str  = "all",
-        max_pages:  int  = 5,
-        concurrent: int  = CFG.max_concurrent,
+        tier: str = "all",
+        max_pages: int = 5,
+        concurrent: int = CFG.max_concurrent,
 ) -> None:
     """Chạy pipeline scraping."""
     if tier == "all":
         provinces = get_all_provinces()
-        sources   = get_all_sources()
+        sources = get_all_sources()
     elif tier in PROVINCE_TIERS:
         provinces = PROVINCE_TIERS[tier]["provinces"]
-        sources   = PROVINCE_TIERS[tier]["sources"]
+        sources = PROVINCE_TIERS[tier]["sources"]
     else:
         log.error(f"Tier không hợp lệ: {tier}")
         return
@@ -171,10 +171,10 @@ async def run_scrape(
     )
 
     pipeline = TwoStagePipeline(
-        provinces  = provinces,
-        sources    = sources,
-        max_pages  = max_pages,
-        concurrent = concurrent,
+        provinces=provinces,
+        sources=sources,
+        max_pages=max_pages,
+        concurrent=concurrent,
     )
     await pipeline.run()
 
@@ -198,21 +198,22 @@ def run_estimate(
 
 
 def run_stage1_only(
-        tier:      str = "tier_1",
+        tier: str = "tier_1",
         max_pages: int = 5,
 ) -> None:
     """Chỉ chạy Stage 1 — thu thập URLs."""
+
     async def _run():
         provinces = PROVINCE_TIERS.get(tier, {}).get(
             "provinces", get_all_provinces()
         )
-        sources   = PROVINCE_TIERS.get(tier, {}).get(
+        sources = PROVINCE_TIERS.get(tier, {}).get(
             "sources", get_all_sources()
         )
-        pipeline  = TwoStagePipeline(
-            provinces  = provinces,
-            sources    = sources,
-            max_pages  = max_pages,
+        pipeline = TwoStagePipeline(
+            provinces=provinces,
+            sources=sources,
+            max_pages=max_pages,
         )
         await pipeline.stage1_collect_urls()
 
@@ -220,7 +221,7 @@ def run_stage1_only(
 
 
 def run_stage2_only(
-        url_file:   str = "hotel_urls_collected.txt",
+        url_file: str = "hotel_urls_collected.txt",
         concurrent: int = CFG.max_concurrent,
 ) -> None:
     """Chỉ chạy Stage 2 — scrape chi tiết từ file URLs."""
@@ -240,9 +241,9 @@ def run_stage2_only(
 
     async def _run():
         pipeline = TwoStagePipeline(
-            provinces  = [],
-            sources    = [],
-            concurrent = concurrent,
+            provinces=[],
+            sources=[],
+            concurrent=concurrent,
         )
         await pipeline.stage2_scrape_details(urls)
 
@@ -291,7 +292,7 @@ def main() -> None:
 
     # ── scrape ────────────────────────────────────────────────
     if mode == "scrape":
-        tier      = args[1] if len(args) > 1 else "all"
+        tier = args[1] if len(args) > 1 else "all"
         max_pages = int(args[2]) if len(args) > 2 else 5
         concurrent = int(args[3]) if len(args) > 3 else CFG.max_concurrent
         try:
@@ -300,7 +301,7 @@ def main() -> None:
                 log.error(f"❌  Tier không hợp lệ: {tier}")
                 print_help()
                 return
-            
+
             asyncio.run(run_scrape(
                 tier=tier,
                 max_pages=max_pages,
@@ -334,7 +335,7 @@ def main() -> None:
 
     # ── stage1 ────────────────────────────────────────────────
     elif mode == "stage1":
-        tier      = args[1] if len(args) > 1 else "tier_1"
+        tier = args[1] if len(args) > 1 else "tier_1"
         max_pages = int(args[2]) if len(args) > 2 else 5
         try:
             # ✅ Validate tier
@@ -342,7 +343,7 @@ def main() -> None:
                 log.error(f"❌  Tier không hợp lệ: {tier}")
                 print_help()
                 return
-            
+
             run_stage1_only(tier=tier, max_pages=max_pages)
         except ValueError:
             log.error(f"❌  max_pages phải là số: {args[2]}")
@@ -353,12 +354,12 @@ def main() -> None:
 
     # ── stage2 ────────────────────────────────────────────────
     elif mode == "stage2":
-        url_file   = args[1] if len(args) > 1 else "hotel_urls_collected.txt"
+        url_file = args[1] if len(args) > 1 else "hotel_urls_collected.txt"
         concurrent = int(args[2]) if len(args) > 2 else CFG.max_concurrent
         try:
             run_stage2_only(
-                url_file   = url_file,
-                concurrent = concurrent,
+                url_file=url_file,
+                concurrent=concurrent,
             )
         except ValueError:
             log.error(f"❌  concurrent phải là số: {args[2]}")
