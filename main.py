@@ -14,7 +14,6 @@ from db              import close_pool
 log = logging.getLogger(__name__)
 
 # ── Province tiers ────────────────────────────────────────────
-# main.py (tiếp)
 PROVINCE_TIERS: dict[str, dict] = {
     "tier_1": {
         "provinces": [
@@ -254,7 +253,7 @@ def run_stage2_only(
 
 def print_help() -> None:
     print("""
-╔══════════════════════════════════════════════════════════════╗
+╔═════════════════════���════════════════════════════════════════╗
 ║           HOTEL REVIEW SCRAPER — HƯỚNG DẪN SỬ DỤNG           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  python main.py scrape [tier] [max_pages] [concurrent]       ║
@@ -291,7 +290,50 @@ def main() -> None:
     mode = args[0].lower()
 
     # ── scrape ────────────────────────────────────────────────
-     elif mode == "stage1":
+    if mode == "scrape":
+        tier      = args[1] if len(args) > 1 else "all"
+        max_pages = int(args[2]) if len(args) > 2 else 5
+        concurrent = int(args[3]) if len(args) > 3 else CFG.max_concurrent
+        try:
+            # ✅ Validate tier
+            if tier not in PROVINCE_TIERS and tier != "all":
+                log.error(f"❌  Tier không hợp lệ: {tier}")
+                print_help()
+                return
+            
+            asyncio.run(run_scrape(
+                tier=tier,
+                max_pages=max_pages,
+                concurrent=concurrent,
+            ))
+        except ValueError as e:
+            log.error(f"❌  Tham số không hợp lệ: {e}")
+        except KeyboardInterrupt:
+            log.info("🛑  Dừng bởi người dùng.")
+        finally:
+            close_pool()
+
+    # ── analyze ───────────────────────────────────────────────
+    elif mode == "analyze":
+        try:
+            run_analyze()
+        except Exception as e:
+            log.error(f"❌  Analyze lỗi: {e}", exc_info=True)
+        finally:
+            close_pool()
+
+    # ── estimate ──────────────────────────────────────────────
+    elif mode == "estimate":
+        concurrent = int(args[1]) if len(args) > 1 else CFG.max_concurrent
+        try:
+            run_estimate(concurrent=concurrent)
+        except ValueError:
+            log.error(f"❌  concurrent phải là số: {args[1]}")
+        finally:
+            close_pool()
+
+    # ── stage1 ────────────────────────────────────────────────
+    elif mode == "stage1":
         tier      = args[1] if len(args) > 1 else "tier_1"
         max_pages = int(args[2]) if len(args) > 2 else 5
         try:
@@ -309,29 +351,6 @@ def main() -> None:
         finally:
             close_pool()
 
-    # ── analyze ───────────────────────────────────────────────
-    elif mode == "analyze":
-        try:
-            run_analyze()
-        except Exception as e:
-            log.error(f"❌  Analyze lỗi: {e}", exc_info=True)
-
-    # ── estimate ──────────────────────────────────────────────
-    elif mode == "estimate":
-        concurrent = int(args[1]) if len(args) > 1 else CFG.max_concurrent
-        run_estimate(concurrent=concurrent)
-
-    # ── stage1 ────────────────────────────────────────────────
-    elif mode == "stage1":
-        tier      = args[1] if len(args) > 1 else "tier_1"
-        max_pages = int(args[2]) if len(args) > 2 else 5
-        try:
-            run_stage1_only(tier=tier, max_pages=max_pages)
-        except KeyboardInterrupt:
-            log.info("🛑  Dừng bởi người dùng.")
-        finally:
-            close_pool()
-
     # ── stage2 ────────────────────────────────────────────────
     elif mode == "stage2":
         url_file   = args[1] if len(args) > 1 else "hotel_urls_collected.txt"
@@ -341,6 +360,8 @@ def main() -> None:
                 url_file   = url_file,
                 concurrent = concurrent,
             )
+        except ValueError:
+            log.error(f"❌  concurrent phải là số: {args[2]}")
         except KeyboardInterrupt:
             log.info("🛑  Dừng bởi người dùng.")
         finally:
