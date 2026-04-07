@@ -215,17 +215,9 @@ def run_stage1_only(
             sources    = sources,
             max_pages  = max_pages,
         )
-        urls = await pipeline.stage1_collect_urls()
-        return urls
+        await pipeline.stage1_collect_urls()
 
-    try:
-        urls = asyncio.run(_run())
-        if urls:
-            log.info(f"✅  Stage 1 xong: {len(urls):,} URLs")
-        else:
-            log.warning(f"⚠️  Stage 1 không tìm thấy URLs")
-    except Exception as e:
-        log.error(f"❌  Stage 1 lỗi: {e}", exc_info=True)
+    asyncio.run(_run())
 
 
 def run_stage2_only(
