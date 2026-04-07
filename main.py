@@ -216,11 +216,16 @@ def run_stage1_only(
             max_pages  = max_pages,
         )
         urls = await pipeline.stage1_collect_urls()
-        return urls  # ← THÊM DÒNG NÀY
+        return urls
 
-    urls = asyncio.run(_run())  # ← NHẬN RETURN VALUE
-    log.info(f"✅  Stage 1 xong: {len(urls):,} URLs")
-    asyncio.run(_run())
+    try:
+        urls = asyncio.run(_run())
+        if urls:
+            log.info(f"✅  Stage 1 xong: {len(urls):,} URLs")
+        else:
+            log.warning(f"⚠️  Stage 1 không tìm thấy URLs")
+    except Exception as e:
+        log.error(f"❌  Stage 1 lỗi: {e}", exc_info=True)
 
 
 def run_stage2_only(
@@ -294,18 +299,19 @@ def main() -> None:
     mode = args[0].lower()
 
     # ── scrape ────────────────────────────────────────────────
-    if mode == "scrape":
-        tier       = args[1] if len(args) > 1 else "all"
-        max_pages  = int(args[2]) if len(args) > 2 else 5
-        concurrent = int(args[3]) if len(args) > 3 else CFG.max_concurrent
+     elif mode == "stage1":
+        tier      = args[1] if len(args) > 1 else "tier_1"
+        max_pages = int(args[2]) if len(args) > 2 else 5
         try:
-            asyncio.run(
-                run_scrape(
-                    tier       = tier,
-                    max_pages  = max_pages,
-                    concurrent = concurrent,
-                )
-            )
+            # ✅ Validate tier
+            if tier not in PROVINCE_TIERS and tier != "all":
+                log.error(f"❌  Tier không hợp lệ: {tier}")
+                print_help()
+                return
+            
+            run_stage1_only(tier=tier, max_pages=max_pages)
+        except ValueError:
+            log.error(f"❌  max_pages phải là số: {args[2]}")
         except KeyboardInterrupt:
             log.info("🛑  Dừng bởi người dùng.")
         finally:
